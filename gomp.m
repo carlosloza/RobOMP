@@ -70,6 +70,7 @@ elseif nargin == 5
     
 end
 
+
 X_gomp = X_gomp(:,1:i);
 E_gomp = E_gomp(:,1:i);
 end
