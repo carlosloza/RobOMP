@@ -6,16 +6,16 @@ function [x, e, w, X, E] = CorrOMP(y, D, varargin)
 %
 % Parameters
 % ----------
-% y :   vector, size (m, 1)
-%       Signal to be sparsely encoded
-% D :   matrix, size (m , n)
-%       Dictionary/measurement matrix made up of atoms
-% K :   int
-%       Number of non-zero coefficients in sparse code
-% tol : float
-%       Residual norm tolerance. Dispersion/power rate not explained by the
-%       sparse code with respect to the norm of y
-%       Default: 0.1 i.e. 10% of the L2 norm of input y
+% y :       vector, size (m, 1)
+%           Signal to be sparsely encoded
+% D :       matrix, size (m , n)
+%           Dictionary/measurement matrix made up of atoms
+% maxiter : int
+%           Number of non-zero coefficients in sparse code
+% tol :     float
+%           Residual norm tolerance. Dispersion/power rate not explained by
+%           the sparse code with respect to the norm of y
+%           Default: 0.1 i.e. 10% of the L2 norm of input y
 %
 % If neither K nor tol are set, then tol is set to default
 % If both K and tol are set, then the algorithm stops when both conditions
@@ -23,36 +23,36 @@ function [x, e, w, X, E] = CorrOMP(y, D, varargin)
 %
 % Returns
 % -------
-% x :   vector, size (n, 1)
-%       Sparse code corresponding to y encoded by D with sparsity level K
-% e :   vector, size (m, 1)
-%       Residue/error after sparse coding of y with sparsity level K
-% w :   vector, size (m, 1)
-%       Weights associated to entries of y according to correntropy-based
-%       linear regression
-% X :   matrix, size (n, K)
-%       Same as x, but each column corresponds to decreasingly sparser
-%       solutions, i.e. first column has sparsirty level of 1, second column
-%       has sparsity level of 2, and so on
-% E :   matrix, size (m, K)
-%       Same as e, but each column corresponds to residue after decreasingly 
-%       sparser solutions, i.e. likewise X
+% x :       vector, size (n, 1)
+%           Sparse code corresponding to y encoded by D with sparsity level K
+% e :       vector, size (m, 1)
+%           Residue/error after sparse coding of y with sparsity level K
+% w :       vector, size (m, 1)
+%           Weights associated to entries of y according to correntropy-based
+%           linear regression
+% X :       matrix, size (n, K)
+%           Same as x, but each column corresponds to decreasingly sparser
+%           solutions, i.e. first column has sparsirty level of 1, second
+%           column has sparsity level of 2, and so on
+% E :       matrix, size (m, K)
+%           Same as e, but each column corresponds to residue after  
+%           decreasingly sparser solutions, i.e. likewise X
 
 % Check inputs
 for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'K')
-        max_decomp = varargin{i + 1};
+    if strcmpi(varargin{i}, 'maxiter')
+        maxiter = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'tol')
         tol = varargin{i + 1};
     end    
 end
 
 % Set defaults if variables were not set
-if exist('max_decomp', 'var') && ~exist('tol', 'var')
+if exist('maxiter', 'var') && ~exist('tol', 'var')
     flcase = 1;         % Stopping criterion based solely on K
-elseif ~exist('max_decomp', 'var') && exist('tol', 'var') 
+elseif ~exist('maxiter', 'var') && exist('tol', 'var') 
     flcase = 2;         % Stopping criterion based solely on tol
-elseif ~exist('max_decomp', 'var') && ~exist('tol', 'var')
+elseif ~exist('maxiter', 'var') && ~exist('tol', 'var')
     flcase = 3;         % Stopping criterion based on both tol alone
 end
 
@@ -61,26 +61,26 @@ switch flcase
     case 1
         tol = -1;
     case 2
-        max_decomp = 100;           % This depends on the problem
+        maxiter = 100;           % This depends on the problem
     case 3
-        max_decomp = 100;           % This depends on the problem
+        maxiter = 100;           % This depends on the problem
         tol = 0.1;
 end
 
 normy = norm(y);
 r = y;
 i = 0;
-X = zeros(n, max_decomp);
-E = zeros(m, max_decomp);
+X = zeros(n, maxiter);
+E = zeros(m, maxiter);
 idx_as = [];
-while (norm(r)/normy > tol && i < max_decomp)
+while (norm(r)/normy > tol && i < maxiter)
     i = i + 1;
     abscorr = abs(r'*D);
     [~, idx] = max(abscorr);
     if isequal(idx_as, union(idx_as, idx))
-        X(:,i:end) = repmat(X(:,i-1), 1, max_decomp - i + 1);
-        E(:,i:end) = repmat(E(:,i-1), 1, max_decomp - i + 1);
-        i = max_decomp;
+        X(:,i:end) = repmat(X(:,i-1), 1, maxiter - i + 1);
+        E(:,i:end) = repmat(E(:,i-1), 1, maxiter - i + 1);
+        i = maxiter;
         break
     end
     idx_as = union(idx_as, idx);
