@@ -14,6 +14,8 @@ sigma_v = 0:0.5:5;
 nSigma = length(sigma_v);
 N0_v = 2:5;
 
+rng(34)         % For reproducibility
+
 n_it = 10;
 
 % Error
@@ -70,9 +72,11 @@ for i = 1:nSigma
         % CorrOMP
         disp('CorrOMP')
         tic
-        xCorrOMP = CorrOMP(y, D, K);
+        %xCorrOMP = CorrOMP(y, D, K);
+        xCorrOMP = CMP(y, D, 'K', K);
         time_CorrOMP(i, it) = toc;
-        err_CorrOMP(i, it) = norm(x0 - xCorrOMP(:,end))/norm(x0);
+        %err_CorrOMP(i, it) = norm(x0 - xCorrOMP(:,end))/norm(x0);
+        err_CorrOMP(i, it) = norm(x0 - xCorrOMP)/norm(x0);
         
         % CauchyOMP
         disp('CauchyOMP')

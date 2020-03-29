@@ -1,8 +1,9 @@
-function [x, e, w, X, E] = CorrOMP(y, D, varargin)
+function [x, e, w, X, E] = CMP(y, D, varargin)
 % Implementation of Correntropy Matching Pursuit as introduced in Wang et
-% al. 2017
+% al. 2017 (DOI: 10.1109/TCYB.2016.2544852)
 % Author: Carlos Loza
-% Part of RobOMP package (https://github.carlosloza/RobOMP)
+% Part of RobOMP package. DOI: 10.7717/peerj-cs.192 (open access)
+% https://github.carlosloza/RobOMP
 %
 % Parameters
 % ----------
@@ -37,6 +38,8 @@ function [x, e, w, X, E] = CorrOMP(y, D, varargin)
 % E :       matrix, size (m, K)
 %           Same as e, but each column corresponds to residue after  
 %           decreasingly sparser solutions, i.e. likewise X
+%
+% Example: x = CMP(y, D, 'maxiter', 10, 'tol', 0.25)
 
 % Check inputs
 for i = 1:length(varargin)
@@ -84,7 +87,7 @@ while (norm(r)/normy > tol && i < maxiter)
         break
     end
     idx_as = union(idx_as, idx);
-    [b, w] = CorrReg(y, D(:, idx_as));          % Robust, correntropy-based regression
+    [b, w] = CorrentropyReg(y, D(:, idx_as));          % Robust, correntropy-based regression
     X(idx_as,i) = b;
     r = sqrt(w).*(y - D(:,idx_as)*X(idx_as,i)); % Weighted residue
     E(:,i) = r;
@@ -96,7 +99,7 @@ x = X(:, end);
 e = E(:, end);
 end
 
-function [b, w] = CorrReg(y, X)
+function [b, w] = CorrentropyReg(y, X)
 % Robust correntropy-based regression
 % Initialiazation based on OLS. Then, IRLS solution is iteratively updated
 % until normalized L2-norm of difference of succesive solutions reaches a
