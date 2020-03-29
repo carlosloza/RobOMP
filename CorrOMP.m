@@ -1,6 +1,7 @@
 function [X, E, w] = CorrOMP(y, D, K, err)
 % Implementation of Correntropy Matching Pursuit as introduced in Wang et
 % al. 2017
+% Author: Carlos Loza
 
 if nargin == 3
     max_decomp = K;
