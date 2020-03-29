@@ -14,7 +14,7 @@ sigma_v = 0:0.5:5;
 nSigma = length(sigma_v);
 N0_v = 2:5;
 
-n_it = 100;
+n_it = 10;
 
 % Error
 err_OMP = zeros(nSigma, n_it);

@@ -1,8 +1,9 @@
 function [X_gomp, E_gomp] = gomp(y, A, K, S, err)
 
-% Generalized Orthogonal Matching Pursuit (gOMP) 
-% gOMP extends conventional Orthogonal Matching Pursuit (OMP) by allowing S 
-% indices (instead of one) to be chosen per iteration.   
+% Generalized Orthogonal Matching Pursuit (gOMP) is a greedy algorothm that
+% provides approximate solution to the problem: min ||x||_0 such that Ax = y. 
+% gOMP extends the conventional Orthogonal Matching Pursuit (OMP) algorithm
+% by allowing S indices to be chosen per iteration.   
 
 % Parameters:
 % y		    : measurements
