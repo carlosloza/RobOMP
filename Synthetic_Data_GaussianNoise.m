@@ -72,45 +72,43 @@ for i = 1:nSigma
         % CorrOMP
         disp('CorrOMP')
         tic
-        %xCorrOMP = CorrOMP(y, D, K);
         xCorrOMP = CMP(y, D, 'K', K);
         time_CorrOMP(i, it) = toc;
-        %err_CorrOMP(i, it) = norm(x0 - xCorrOMP(:,end))/norm(x0);
         err_CorrOMP(i, it) = norm(x0 - xCorrOMP)/norm(x0);
         
         % CauchyOMP
         disp('CauchyOMP')
         tic
-        xCauchyOMP = CauchyOMP(y, D, K);
+        xCauchyOMP = RobOMP(y, D, 'm-est', 'Cauchy', 'maxiter', K);
         time_CauchyOMP(i, it) = toc;
-        err_CauchyOMP(i, it) = norm(x0 - xCauchyOMP(:,end))/norm(x0);
+        err_CauchyOMP(i, it) = norm(x0 - xCauchyOMP)/norm(x0);
         
         % FairOMP
         disp('FairOMP')
         tic
-        xFairOMP = FairOMP(y, D, K);
+        xFairOMP = RobOMP(y, D, 'm-est', 'Fair', 'maxiter', K);
         time_FairOMP(i, it) = toc;
-        err_FairOMP(i, it) = norm(x0 - xFairOMP(:,end))/norm(x0);
+        err_FairOMP(i, it) = norm(x0 - xFairOMP)/norm(x0);
         
         % HuberOMP
         disp('HuberOMP')
         tic
-        xHuberOMP = HuberOMP(y, D, K);
+        xHuberOMP = RobOMP(y, D, 'm-est', 'Huber', 'maxiter', K);
         time_HuberOMP(i, it) = toc;
-        err_HuberOMP(i, it) = norm(x0 - xHuberOMP(:,end))/norm(x0);
+        err_HuberOMP(i, it) = norm(x0 - xHuberOMP)/norm(x0);
         
         % TukeyOMP
         disp('TukeyOMP')
         tic
-        xTukeyOMP = TukeyOMP(y, D, K);
+        xTukeyOMP = RobOMP(y, D, 'm-est', 'Tukey', 'maxiter', K);
         time_TukeyOMP(i, it) = toc;
-        err_TukeyOMP(i, it) = norm(x0 - xTukeyOMP(:,end))/norm(x0);
+        err_TukeyOMP(i, it) = norm(x0 - xTukeyOMP)/norm(x0);
         
         % WelschOMP
         disp('WelschOMP')
         tic
-        xWelschOMP = WelschOMP(y, D, K);
+        xWelschOMP = RobOMP(y, D, 'm-est', 'Welsch', 'maxiter', K);
         time_WelschOMP(i, it) = toc;
-        err_WelschOMP(i, it) = norm(x0 - xWelschOMP(:,end))/norm(x0);
+        err_WelschOMP(i, it) = norm(x0 - xWelschOMP)/norm(x0);
     end
 end

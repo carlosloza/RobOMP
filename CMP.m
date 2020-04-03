@@ -99,6 +99,7 @@ x = X(:, end);
 e = E(:, end);
 end
 
+%%
 function [b, w] = CorrentropyReg(y, X)
 % Robust correntropy-based regression
 % Initialiazation based on OLS. Then, IRLS solution is iteratively updated
