@@ -11,8 +11,10 @@ function [x, e, w, X, E] = CMP(y, D, varargin)
 %           Signal to be sparsely encoded
 % D :       matrix, size (m , n)
 %           Dictionary/measurement matrix made up of atoms
-% maxiter : int
+% nnonzero :int
 %           Number of non-zero coefficients in sparse code
+%           This is equal to number of iterations in Orthogonal Matching
+%           Pursuit (OMP)
 % tol :     float
 %           Residual norm tolerance. Dispersion/power rate not explained by
 %           the sparse code with respect to the norm of y
@@ -39,57 +41,59 @@ function [x, e, w, X, E] = CMP(y, D, varargin)
 %           Same as e, but each column corresponds to residue after  
 %           decreasingly sparser solutions, i.e. likewise X
 %
-% Example: x = CMP(y, D, 'maxiter', 10, 'tol', 0.25)
+% Example: x = CMP(y, D, 'nnonzero', 10, 'tol', 0.25)
 
+[m, n] = size(D);
 % Check inputs
 for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'maxiter')
-        maxiter = varargin{i + 1};
+    if strcmpi(varargin{i}, 'nnonzero')
+        nnonzero = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'tol')
         tol = varargin{i + 1};
     end    
 end
 
 % Set defaults if variables were not set
-if exist('maxiter', 'var') && ~exist('tol', 'var')
+if exist('nnonzero', 'var') && ~exist('tol', 'var')
     flcase = 1;         % Stopping criterion based solely on K
-elseif ~exist('maxiter', 'var') && exist('tol', 'var') 
+elseif ~exist('nnonzero', 'var') && exist('tol', 'var') 
     flcase = 2;         % Stopping criterion based solely on tol
-elseif ~exist('maxiter', 'var') && ~exist('tol', 'var')
+elseif ~exist('nnonzero', 'var') && ~exist('tol', 'var')
     flcase = 3;         % Stopping criterion based on both tol alone
 end
 
-[m, n] = size(D);
 switch flcase
     case 1
         tol = -1;
     case 2
-        maxiter = 100;           % This depends on the problem
+        nnonzero = n;           % Extreme case
     case 3
-        maxiter = 100;           % This depends on the problem
+        nnonzero = n;           % Extreme case
         tol = 0.1;
 end
 
 normy = norm(y);
 r = y;
 i = 0;
-X = zeros(n, maxiter);
-E = zeros(m, maxiter);
-idx_as = [];
-while (norm(r)/normy > tol && i < maxiter)
+X = zeros(n, nnonzero);
+E = zeros(m, nnonzero);
+idx_spcode = [];
+while (norm(r)/normy > tol && i < nnonzero)
     i = i + 1;
     abscorr = abs(r'*D);
     [~, idx] = max(abscorr);
-    if isequal(idx_as, union(idx_as, idx))
-        X(:,i:end) = repmat(X(:,i-1), 1, maxiter - i + 1);
-        E(:,i:end) = repmat(E(:,i-1), 1, maxiter - i + 1);
-        i = maxiter;
+    if any(diff(sort([idx_spcode idx])) == 0)       % Case for repeated atom
+        X(:,i:end) = repmat(X(:,i-1), 1, nnonzero - i + 1);
+        E(:,i:end) = repmat(E(:,i-1), 1, nnonzero - i + 1);
+        i = nnonzero;
+        disp('Warning: Repeated atom detected. Algorithm stops.')
         break
     end
-    idx_as = union(idx_as, idx);
-    [b, w] = CorrentropyReg(y, D(:, idx_as));          % Robust, correntropy-based regression
-    X(idx_as,i) = b;
-    r = sqrt(w).*(y - D(:,idx_as)*X(idx_as,i)); % Weighted residue
+    idx_spcode = [idx_spcode idx];
+    % Robust, correntropy-based regression
+    [b, w] = CorrentropyReg(y, D(:, idx_spcode));
+    X(idx_spcode,i) = b;
+    r = sqrt(w).*(y - D(:, idx_spcode)*X(idx_spcode, i)); % Weighted residue
     E(:,i) = r;
 end
 
@@ -163,7 +167,8 @@ while fl
     end
     if it == max_it
         fl = 0;
-        disp('Warning: Solution did not converge in maximum number of iterations allowed')
+        disp(['Warning: ', ... 
+            'Solution did not converge in maximum number of iterations allowed'])
     end
 end
 

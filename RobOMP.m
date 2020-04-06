@@ -24,8 +24,10 @@ function [x, e, w, X, E] = RobOMP(y, D, varargin)
 %               Defaults are set on a per-estimator basis according to 95% 
 %               asymptotic efficiency on the standar Normal distribution, 
 %               see Table 2 of Loza 2019 for specifics
-% maxiter :     int
+% nnonzero :    int
 %               Number of non-zero coefficients in sparse code
+%               This is equal to number of iterations in Orthogonal Matching
+%               Pursuit (OMP)
 % tol :         float
 %               Residual norm tolerance. Dispersion/power rate not explained
 %               by the sparse code with respect to the norm of y
@@ -52,9 +54,10 @@ function [x, e, w, X, E] = RobOMP(y, D, varargin)
 %           Same as e, but each column corresponds to residue after  
 %           decreasingly sparser solutions, i.e. likewise X
 %
-% Example: x = RobOMP(y, D, 'warmstart', 0, 'm-est', 'Tukey', 'maxiter', 10, 'tol', 0.25)
+% Example: x = RobOMP(y, D, 'warmstart', 0, 'm-est', 'Tukey', 'nnonzero', 10, 'tol', 0.25)
 
 warmst = 1;                     % default warmstart
+[m, n] = size(D);
 % Check inputs
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'warmstart')
@@ -63,18 +66,18 @@ for i = 1:length(varargin)
         m_est = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'c')
         m_est_hyperp = varargin{i + 1};
-    elseif strcmpi(varargin{i}, 'maxiter')
-        maxiter = varargin{i + 1};
+    elseif strcmpi(varargin{i}, 'nnonzero')
+        nnonzero = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'tol')
         tol = varargin{i + 1};
     end    
 end
 % Set defaults if variables were not set
-if exist('maxiter', 'var') && ~exist('tol', 'var')
+if exist('nnonzero', 'var') && ~exist('tol', 'var')
     flcase = 1;         % Stopping criterion based solely on K
-elseif ~exist('maxiter', 'var') && exist('tol', 'var') 
+elseif ~exist('nnonzero', 'var') && exist('tol', 'var') 
     flcase = 2;         % Stopping criterion based solely on tol
-elseif ~exist('maxiter', 'var') && ~exist('tol', 'var')
+elseif ~exist('nnonzero', 'var') && ~exist('tol', 'var')
     flcase = 3;         % Stopping criterion based on both tol alone
 end
 % Default m-estimator
@@ -96,38 +99,38 @@ if ~exist('m_est_hyperp', 'var')
     end
 end
 
-[m, n] = size(D);
 switch flcase
     case 1
         tol = -1;
     case 2
-        maxiter = 100;           % This depends on the problem
+        nnonzero = n;           % This depends on the problem
     case 3
-        maxiter = 100;           % This depends on the problem
+        nnonzero = n;           % This depends on the problem
         tol = 0.1;
 end
 
 normy = norm(y);
 r = y;
 i = 0;
-X = zeros(n, maxiter);
-E = zeros(m, maxiter);
-idx_as = [];
-while (norm(r)/normy > tol && i < maxiter)
+X = zeros(n, nnonzero);
+E = zeros(m, nnonzero);
+idx_spcode = [];
+while (norm(r)/normy > tol && i < nnonzero)
     i = i + 1;
     abscorr = abs(r'*D);
     [~, idx] = max(abscorr);
-    if isequal(idx_as, union(idx_as, idx))
-        X(:,i:end) = repmat(X(:,i-1), 1, maxiter - i + 1);
-        E(:,i:end) = repmat(E(:,i-1), 1, maxiter - i + 1);
-        i = maxiter;
+    if any(diff(sort([idx_spcode idx])) == 0)       % Case for repeated atom
+        X(:,i:end) = repmat(X(:,i-1), 1, nnonzero - i + 1);
+        E(:,i:end) = repmat(E(:,i-1), 1, nnonzero - i + 1);
+        i = nnonzero;
+        disp('Warning: Repeated atom detected. Algorithm stops.')
         break
     end
-    idx_as = union(idx_as, idx);
+    idx_spcode = [idx_spcode idx];
     % Robust, m-estimator-based regression
-    [b, w] = RobReg(y, D(:, idx_as), warmst, m_est, m_est_hyperp);
-    X(idx_as,i) = b;
-    r = w.*(y - D(:,idx_as)*X(idx_as,i));           % Weighted residue
+    [b, w] = RobReg(y, D(:, idx_spcode), warmst, m_est, m_est_hyperp);
+    X(idx_spcode, i) = b;
+    r = w.*(y - D(:, idx_spcode)*X(idx_spcode, i));           % Weighted residue
     E(:,i) = r;
 end
 
@@ -237,7 +240,8 @@ while fl
     end
     if it == max_it
         fl = 0;
-        disp('Warning: Solution did not converge in maximum number of iterations allowed')
+        disp(['Warning: ', ... 
+            'Solution did not converge in maximum number of iterations allowed'])
     end
 end
 
