@@ -2,12 +2,13 @@
 % Script that compares the performance of sparse coding variants considered
 % in "RobOMP: Robust variants of Orthogonal Matching Pursuit for sparse 
 % representations" DOI: 10.7717/peerj-cs.192 (open access)
+% Author: Carlos Loza
 % https://github.carlosloza/RobOMP
 % Methodology:
 % 1. A dictionary (D) with atoms from a random density (Normal) are generated
 % 2. Samples that are sparsely encoded by D are generated (ground truth 
 % sparsity level is provided)
-% 3. Additive exponential noise is added to samples
+% 3. Additive chi-square noise is added to samples
 % 4. The following sparse coders are implemented:
 %   - Orthogonal Matching Pursuit (OMP)
 %   - Generalized OMP (with optional set of number of atoms per iteration)
@@ -16,14 +17,14 @@
 %   Welsh
 % 5. Performance measure: Average normalized L2-norm of difference between 
 % ground truth sparse code and estimated sparse code
-% Note: Several noise means and number of iterations are allowed
+% Note: Several noise degrees of freedom and number of iterations are allowed
 % Note: Execution time is tracked as well
 %
-% Setting the mean to 1 will yield the averages summarized in
+% Setting the degrees of freedom to 1 will yield the averages summarized in
 % Table 3 of RobOMP article
 % CORRECTION: The original results in Table 3 for gOMP overestimated the
 % sparsity level, therefore, the normalized norm was larger than the (right)
-% results obtained via this script
+% results obtained via this script.
 % Also, the results in the article took a random seed so the final outputs
 % of this script might not exactly match the published results.
 % Lastly, this new version implements a warm start of RobOMP by default, i.e.
@@ -35,11 +36,13 @@ close all
 clearvars
 clc
 
+addpath('..')               % Assuming directories as in remote repo
+
 m = 100;                    % Dimensionality
 n = 500;                    % Number of atoms
 K = 10;                     % Ground truth sparsity level
-mu_v = 1:5;                 % Set of means of added exponential noise       
-nMu = length(mu_v);
+dof_v = 1:6;                % Set of degrees of freedom of added chi-square noise       
+ndof = length(dof_v);
 N0_v = [5 10 20];           % Set of number of atoms extracted per iteration by gOMP
 
 rng(34)                     % For reproducibility
@@ -47,30 +50,30 @@ rng(34)                     % For reproducibility
 n_it = 100;                 % Number of iterations
 
 % Error
-err_OMP = zeros(nMu, n_it);
-err_gOMP = zeros(nMu, n_it, length(N0_v));
-err_CMP = zeros(nMu, n_it);
-err_CauchyOMP = zeros(nMu, n_it);
-err_FairOMP = zeros(nMu, n_it);
-err_HuberOMP = zeros(nMu, n_it);
-err_TukeyOMP = zeros(nMu, n_it);
-err_WelschOMP = zeros(nMu, n_it);
+err_OMP = zeros(ndof, n_it);
+err_gOMP = zeros(ndof, n_it, length(N0_v));
+err_CMP = zeros(ndof, n_it);
+err_CauchyOMP = zeros(ndof, n_it);
+err_FairOMP = zeros(ndof, n_it);
+err_HuberOMP = zeros(ndof, n_it);
+err_TukeyOMP = zeros(ndof, n_it);
+err_WelschOMP = zeros(ndof, n_it);
 
 % Time
-time_OMP = zeros(nMu, n_it);
-time_gOMP = zeros(nMu, n_it, length(N0_v));
-time_CMP = zeros(nMu, n_it);
-time_CauchyOMP = zeros(nMu, n_it);
-time_FairOMP = zeros(nMu, n_it);
-time_HuberOMP = zeros(nMu, n_it);
-time_TukeyOMP = zeros(nMu, n_it);
-time_WelschOMP = zeros(nMu, n_it);
+time_OMP = zeros(ndof, n_it);
+time_gOMP = zeros(ndof, n_it, length(N0_v));
+time_CMP = zeros(ndof, n_it);
+time_CauchyOMP = zeros(ndof, n_it);
+time_FairOMP = zeros(ndof, n_it);
+time_HuberOMP = zeros(ndof, n_it);
+time_TukeyOMP = zeros(ndof, n_it);
+time_WelschOMP = zeros(ndof, n_it);
 
-fprintf('Average performance of sparse coders \nSynthetic data \nAdditive exponential noise\n')
+fprintf('Average performance of sparse coders \nSynthetic data \nAdditive Chi-square noise\n')
 fprintf('Ground truth sparsity level: %u \n', K)
 fprintf('Number of iterations per case: %u \n', n_it)
-for i = 1:nMu
-    fprintf('Exponential additive noise mean: %.2f \n', mu_v(i))
+for i = 1:ndof
+    fprintf('Chi-square additive noise degrees of freedom: %.2f \n', dof_v(i))
     for it = 1:n_it
         % Synthetic dictionary
         D = randn(m, n);
@@ -78,8 +81,8 @@ for i = 1:nMu
         x0 = zeros(n, 1);
         x0(randperm(n, K)) = randn(K, 1);   % Ground truth sparse code
         y = D*x0;        
-        % Add exponential noise
-        ynoi = y + exprnd(mu_v(i),size(y));
+        % Add chi-square noise
+        ynoi = y + chi2rnd(dof_v(i), size(y));
         y = ynoi;
         
         % OMP
@@ -137,50 +140,50 @@ end
 %% Plot results
 figure('units','normalized','outerposition',[0 0 1 1])
 FontSize = 40;
-FontSizeLegend = 25;
+FontSizeLegend = 26;
 Linewidth = 5;
 MarkerSize = 20;
-plot(mu_v, mean(err_OMP,2), '--+' , 'Color', [0 0 153]/255)
+plot(dof_v, mean(err_OMP,2), '--+' , 'Color', [0 0 153]/255)
 hold on
 % Best case for gOMP
 idxgOMP = 3;
-plot(mu_v, mean(err_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
-plot(mu_v, mean(err_CMP,2), '--d' , 'Color', [0 0 0]/255)
-plot(mu_v, mean(err_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
-plot(mu_v, mean(err_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
-plot(mu_v, mean(err_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
-plot(mu_v, mean(err_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
-plot(mu_v, mean(err_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
+plot(dof_v, mean(err_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
+plot(dof_v, mean(err_CMP,2), '--d' , 'Color', [0 0 0]/255)
+plot(dof_v, mean(err_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
+plot(dof_v, mean(err_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
+plot(dof_v, mean(err_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
+plot(dof_v, mean(err_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
+plot(dof_v, mean(err_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
 ylabel('Norm of sparse code error')
-xlabel('Exponential additive noise mean')
+xlabel('Chi-square additive noise degrees of freedom')
 set(findall(gcf,'-property','FontSize'),'FontSize',FontSize)
 set(findall(gcf,'-property','Linewidth'),'Linewidth',Linewidth)
 set(findall(gcf,'-property','MarkerSize'),'MarkerSize',MarkerSize)
 legend({'OMP',['gOMP, N_0=' num2str(N0_v(idxgOMP))],'CMP','Cauchy','Fair','Huber','Tukey','Welsch'},...
     'Location','Northwest','FontSize',FontSizeLegend);
-xlim([mu_v(1) mu_v(end)])
+xlim([dof_v(1) dof_v(end)])
 
 %% Plot times in miliseconds
 figure('units','normalized','outerposition',[0 0 1 1])
 FontSize = 40;
-FontSizeLegend = 22;
+FontSizeLegend = 21;
 Linewidth = 5;
 MarkerSize = 20;
-plot(mu_v, 1000*mean(time_OMP,2), '--+' , 'Color', [0 0 153]/255)
+plot(dof_v, 1000*mean(time_OMP,2), '--+' , 'Color', [0 0 153]/255)
 hold on
-plot(mu_v, 1000*mean(time_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
-plot(mu_v, 1000*mean(time_CMP,2), '--d' , 'Color', [0 0 0]/255)
-plot(mu_v, 1000*mean(time_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
-plot(mu_v, 1000*mean(time_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
-plot(mu_v, 1000*mean(time_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
-plot(mu_v, 1000*mean(time_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
-plot(mu_v, 1000*mean(time_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
+plot(dof_v, 1000*mean(time_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
+plot(dof_v, 1000*mean(time_CMP,2), '--d' , 'Color', [0 0 0]/255)
+plot(dof_v, 1000*mean(time_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
+plot(dof_v, 1000*mean(time_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
+plot(dof_v, 1000*mean(time_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
+plot(dof_v, 1000*mean(time_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
+plot(dof_v, 1000*mean(time_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
 ylabel('Processing time (ms.)')
-xlabel('Exponential additive noise mean')
+xlabel('Chi-square additive noise degrees of freedom')
 set(findall(gcf,'-property','FontSize'),'FontSize',FontSize)
 set(findall(gcf,'-property','Linewidth'),'Linewidth',Linewidth)
 set(findall(gcf,'-property','MarkerSize'),'MarkerSize',MarkerSize)
 legend({'OMP',['gOMP, N_0=' num2str(N0_v(idxgOMP))],'CMP','Cauchy','Fair','Huber','Tukey','Welsch'},...
     'Location','Northwest','FontSize',FontSizeLegend);
-xlim([mu_v(1) mu_v(end)])
+xlim([dof_v(1) dof_v(end)])
 ylim([0 20])

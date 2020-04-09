@@ -1,8 +1,8 @@
 function y  = laplacernd(m, n, mu, s)
 % Implementation of random number generator according to Laplace distribution
-% Author: Carlos Loza
 % Part of RobOMP package. "RobOMP: Robust variants of Orthogonal Matching 
 % Pursuit for sparse representations" DOI: 10.7717/peerj-cs.192 (open access)
+% Author: Carlos Loza
 % https://github.carlosloza/RobOMP
 %
 % Parameters

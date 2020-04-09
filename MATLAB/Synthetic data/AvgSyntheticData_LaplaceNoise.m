@@ -2,6 +2,7 @@
 % Script that compares the performance of sparse coding variants considered
 % in "RobOMP: Robust variants of Orthogonal Matching Pursuit for sparse 
 % representations" DOI: 10.7717/peerj-cs.192 (open access)
+% Author: Carlos Loza
 % https://github.carlosloza/RobOMP
 % Methodology:
 % 1. A dictionary (D) with atoms from a random density (Normal) are generated
@@ -34,6 +35,8 @@
 close all
 clearvars
 clc
+
+addpath('..')               % Assuming directories as in remote repo
 
 m = 100;                    % Dimensionality
 n = 500;                    % Number of atoms
