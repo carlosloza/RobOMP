@@ -4,6 +4,8 @@
 % 5 increasingly complex (and more challenging) subsets. This segmentation
 % of the database has been used in other publications as well, e.g. 
 % Wright et al., 2009
+% Image processing toolbox needed. Alternatively, the python implementation
+% can be used.
 % Part of RobOMP package. "RobOMP: Robust variants of Orthogonal Matching 
 % Pursuit for sparse representations" DOI: 10.7717/peerj-cs.192 (open access)
 % Author: Carlos Loza

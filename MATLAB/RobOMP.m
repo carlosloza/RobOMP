@@ -123,7 +123,7 @@ while (norm(r)/normy > tol && i < nnonzero)
         X(:,i:end) = repmat(X(:,i-1), 1, nnonzero - i + 1);
         E(:,i:end) = repmat(E(:,i-1), 1, nnonzero - i + 1);
         i = nnonzero;
-        disp('Warning: Repeated atom detected. Algorithm stops.')
+        warning('Repeated atom detected. Algorithm stops.')
         break
     end
     idx_spcode = [idx_spcode idx];
@@ -240,8 +240,7 @@ while fl
     end
     if it == max_it
         fl = 0;
-        disp(['Warning: ', ... 
-            'Solution did not converge in maximum number of iterations allowed'])
+        warning('Solution did not converge in maximum number of iterations allowed')
     end
 end
 

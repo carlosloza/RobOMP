@@ -79,13 +79,11 @@ end
 
 % Check if nnonzero is multiple of N0
 if mod(nnonzero, N0) < 0
-    disp(['Warning: ', ...
-        'nnonzero is not a multiple of N0. Actual support of sparse code ', ...
+    warning(['nnonzero is not a multiple of N0. Actual support of sparse code ', ...
         'will be decreased'])
     nnonzero = N0*floor(nnonzero/N0);
 elseif mod(nnonzero, N0) > 0
-    %disp(['Warning: ', ...
-    %    'S is larger than nnonzero. S will be set to nnonzero'])
+    %warning('S is larger than nnonzero. S will be set to nnonzero')
     N0 = nnonzero;           % Extreme case, only one iteration is needed
 end
 
@@ -104,7 +102,7 @@ while (norm(r)/normy > tol && i < maxiter)
         X(:,i:end) = repmat(X(:,i-1), 1, maxiter - i + 1);
         E(:,i:end) = repmat(E(:,i-1), 1, maxiter - i + 1);
         i = maxiter;
-        disp('Warning: Repeated atom detected. Algorithm stops.')
+        warning('Repeated atom detected. Algorithm stops.')
         break
     end
     idx_spcode = [idx_spcode idx(1:N0)];
