@@ -2,35 +2,41 @@
 % Script that compares the performance of sparse coding variants considered
 % in "RobOMP: Robust variants of Orthogonal Matching Pursuit for sparse 
 % representations" DOI: 10.7717/peerj-cs.192 (open access)
+% Laplace noise scenario
 % Author: Carlos Loza
 % https://github.carlosloza/RobOMP
+%
 % Methodology:
+% ------------
 % 1. A dictionary (D) with atoms from a random density (Normal) are generated
 % 2. Samples that are sparsely encoded by D are generated (ground truth 
 % sparsity level is provided)
 % 3. Additive zero-mean laplace noise is added to samples
 % 4. The following sparse coders are implemented:
 %   - Orthogonal Matching Pursuit (OMP)
-%   - Generalized OMP (with optional set of number of atoms per iteration)
+%   - Generalized OMP (with optional set of number of atoms per run)
 %   - Correntropy Matching Pursuit
 %   - Robust m-estimator-based variants of OMP: Fair, Cauchy, Huber, Tukey,
 %   Welsh
 % 5. Performance measure: Average normalized L2-norm of difference between 
 % ground truth sparse code and estimated sparse code
-% Note: Several noise standard deviations and number of iterations are allowed
-% Note: Execution time is tracked as well
 %
-% Setting the standard deviation to 2 will yield the averages summarized in
-% Table 3 of RobOMP article
+% Notes:
+% ------
+% - Several noise standard deviations and number of iterations are allowed
+% - Execution time is tracked as well
+% - Setting the standard deviation to 2 will yield the averages summarized
+% in Table 3 of RobOMP article
+% - The results in the article took a random seed so the final outputs of
+% this script might not exactly match the published results
+% - Lastly, this new version implements a warm start of RobOMP by default, 
+% i.e. the Huber solution is the initial solution for every RobOMP case
+% Empirically, this initialization was not only proved to be more stable,
+% but it also yielded better performance
+%
 % CORRECTION: The original results in Table 3 for gOMP overestimated the
 % sparsity level, therefore, the normalized norm was larger than the (right)
 % results obtained via this script
-% Also, the results in the article took a random seed so the final outputs
-% of this script might not exactly match the published results.
-% Lastly, this new version implements a warm start of RobOMP by default, i.e.
-% the Huber solution is the initial solution for every RobOMP case.
-% Empirically, this initialization was not only proved to be more stable,
-% but it also yielded better performance.
 
 close all
 clearvars
