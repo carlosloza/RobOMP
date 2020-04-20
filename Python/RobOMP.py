@@ -53,5 +53,4 @@ class gOMP:
         E = E[:, 0:i + 1]
         x = X[:, -1].reshape((n, 1))
         e = E[:, -1].reshape((m, 1))
-
         return x, e, X, E
