@@ -44,7 +44,6 @@ class gOMP:
             abscorr = np.absolute(np.dot(r.T, D))
             idx = np.argsort(-abscorr, axis = None)
             idx_spcode = np.append(idx_spcode, idx[0:self.N0])
-            #idx_spcode.append(idx[0:self.N0])
             b, _, _, _ = np.linalg.lstsq(D[:, idx_spcode], y, rcond=None)
             X[idx_spcode, i] = b.flatten()
             r = y - np.matmul(D[:, idx_spcode], b)

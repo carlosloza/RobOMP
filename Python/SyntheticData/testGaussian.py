@@ -1,4 +1,4 @@
-from gOMP import gOMP
+from RobOMP import gOMP
 import numpy as np
 
 m = 100
