@@ -2,37 +2,41 @@
 % Script that compares the performance of sparse coding variants considered
 % in "RobOMP: Robust variants of Orthogonal Matching Pursuit for sparse 
 % representations" DOI: 10.7717/peerj-cs.192 (open access)
+% Missing entries noise (fixed K)
 % Author: Carlos Loza
 % https://github.carlosloza/RobOMP
+%
 % Methodology:
+% ------------
 % 1. A dictionary (D) with atoms from a random density (Normal) are generated
 % 2. Samples that are sparsely encoded by D are generated (ground truth 
 % sparsity level is provided)
-% 3. Randomly selected entries are affected by additive noise, i.e. impulsive
-% noise, with a given SNR
+% 3. Randomly selected entries are zeroed (missing entries)
 % 4. The following sparse coders are implemented:
 %   - Orthogonal Matching Pursuit (OMP)
-%   - Generalized OMP (with optional set of number of atoms per iteration)
+%   - Generalized OMP (with optional set of number of atoms per run)
 %   - Correntropy Matching Pursuit
 %   - Robust m-estimator-based variants of OMP: Fair, Cauchy, Huber, Tukey,
 %   Welsh
 % 5. Performance measure: Average normalized L2-norm of difference between 
 % ground truth sparse code and estimated sparse code
-% Note: Sparsity level of sparse coders is set equal to ground truth
-% Note: Fixed additive impulsive noise SNR
-% Note: Several affected entries rates and number of iterations are allowed
-% Note: Execution time is tracked as well
 %
-% This script replicates the results summarized in Fig 4A of RobOMP article
-% CORRECTION: The original results in Fig 4A for gOMP overestimated the
+% Notes:
+% ------
+% - Sparsity level of sparse coders is set equal to ground truth
+% - Several missing entries rates and number of iterations are allowed
+% - Execution time is tracked as well
+% - This script replicates the results summarized in Fig 2 of RobOMP article
+% - The results in the article took a random seed so the final outputs
+% of this script might not exactly match the published results
+% - Lastly, this new version implements a warm start of RobOMP by default,
+% i.e. the Huber solution is the initial solution for every RobOMP case
+% Empirically, this initialization was not only proved to be more stable,
+% but it also yielded better performance
+%
+% CORRECTION: The original results in Fig 2 for gOMP overestimated the
 % sparsity level, therefore, the normalized norm was larger than the (right)
 % results obtained via this script
-% Also, the results in the article took a random seed so the final outputs
-% of this script might not exactly match the published results.
-% Lastly, this new version implements a warm start of RobOMP by default, i.e.
-% the Huber solution is the initial solution for every RobOMP case.
-% Empirically, this initialization was not only proved to be more stable,
-% but it also yielded better performance.
 
 close all
 clearvars
@@ -43,43 +47,39 @@ addpath('..')               % Assuming directories as in remote repo
 m = 100;                        % Dimensionality
 n = 500;                        % Number of atoms
 K = 10;                         % Ground truth sparsity level
-impulentries_v = 0:0.05:0.5;    % Set of rates of affected entries
-nimpul = length(impulentries_v);
+zeroentries_v = 0:0.05:0.5;     % Set of rates of missing entries
+nzent = length(zeroentries_v);
 N0_v = [5 10 20];               % Set of number of atoms extracted per iteration by gOMP
-
-SNRdB = -20;                    % Additive impulsive noise SNR
 
 rng(34)                         % For reproducibility
 
 n_it = 100;                     % Number of iterations
 
 % Error
-err_OMP = zeros(nimpul, n_it);
-err_gOMP = zeros(nimpul, n_it, length(N0_v));
-err_CMP = zeros(nimpul, n_it);
-err_CauchyOMP = zeros(nimpul, n_it);
-err_FairOMP = zeros(nimpul, n_it);
-err_HuberOMP = zeros(nimpul, n_it);
-err_TukeyOMP = zeros(nimpul, n_it);
-err_WelschOMP = zeros(nimpul, n_it);
+err_OMP = zeros(nzent, n_it);
+err_gOMP = zeros(nzent, n_it, length(N0_v));
+err_CMP = zeros(nzent, n_it);
+err_CauchyOMP = zeros(nzent, n_it);
+err_FairOMP = zeros(nzent, n_it);
+err_HuberOMP = zeros(nzent, n_it);
+err_TukeyOMP = zeros(nzent, n_it);
+err_WelschOMP = zeros(nzent, n_it);
 
 % Time
-time_OMP = zeros(nimpul, n_it);
-time_gOMP = zeros(nimpul, n_it, length(N0_v));
-time_CMP = zeros(nimpul, n_it);
-time_CauchyOMP = zeros(nimpul, n_it);
-time_FairOMP = zeros(nimpul, n_it);
-time_HuberOMP = zeros(nimpul, n_it);
-time_TukeyOMP = zeros(nimpul, n_it);
-time_WelschOMP = zeros(nimpul, n_it);
+time_OMP = zeros(nzent, n_it);
+time_gOMP = zeros(nzent, n_it, length(N0_v));
+time_CMP = zeros(nzent, n_it);
+time_CauchyOMP = zeros(nzent, n_it);
+time_FairOMP = zeros(nzent, n_it);
+time_HuberOMP = zeros(nzent, n_it);
+time_TukeyOMP = zeros(nzent, n_it);
+time_WelschOMP = zeros(nzent, n_it);
 
-fprintf('Average performance of sparse coders \nSynthetic data \n')
-fprintf('Random entries affected by additive noise, i.e. impulsive noise\n')
+fprintf('Average performance of sparse coders \nSynthetic data \nRandom missing entries\n')
 fprintf('Ground truth sparsity level: %u \n', K)
-fprintf('Additive impulsive noise SNR: %.2f dB \n', SNRdB)
 fprintf('Number of iterations per case: %u \n', n_it)
-for i = 1:nimpul
-    fprintf('Rate of entries affected by impulsive noise: %.2f \n', impulentries_v(i))
+for i = 1:nzent
+    fprintf('Rate of missing entries: %.2f \n', zeroentries_v(i))
     for it = 1:n_it
         % Synthetic dictionary
         D = randn(m, n);
@@ -87,10 +87,8 @@ for i = 1:nimpul
         x0 = zeros(n, 1);
         x0(randperm(n, K)) = randn(K, 1);       % Ground truth sparse code
         y = D*x0;
-        % Randomly selected entries affected by additive impulsive noise
-        yimp = AWGNoise(y, SNRdB);
-        imp_idx = randperm(m, round(impulentries_v(i)*m));
-        y(imp_idx) = yimp(imp_idx);
+        % Randomly selected entries are set to zero (missing entries)
+        y(randperm(m, round(zeroentries_v(i)*m))) = zeros(round(zeroentries_v(i)*m), 1);
         
         % OMP
         tic
@@ -144,25 +142,25 @@ for i = 1:nimpul
     end
 end
 
-%% Plot results
+%% Plot results - Fig. 2
 figure('units','normalized','outerposition',[0 0 1 1])
 FontSize = 40;
-FontSizeLegend = 23;
+FontSizeLegend = 26;
 Linewidth = 5;
 MarkerSize = 20;
-plot(impulentries_v, mean(err_OMP,2), '--+' , 'Color', [0 0 153]/255)
+plot(zeroentries_v, mean(err_OMP,2), '--+' , 'Color', [0 0 153]/255)
 hold on
 % Best case for gOMP
-idxgOMP = 2;
-plot(impulentries_v, mean(err_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
-plot(impulentries_v, mean(err_CMP,2), '--d' , 'Color', [0 0 0]/255)
-plot(impulentries_v, mean(err_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
-plot(impulentries_v, mean(err_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
-plot(impulentries_v, mean(err_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
-plot(impulentries_v, mean(err_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
-plot(impulentries_v, mean(err_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
+idxgOMP = 1;
+plot(zeroentries_v, mean(err_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
+plot(zeroentries_v, mean(err_CMP,2), '--d' , 'Color', [0 0 0]/255)
+plot(zeroentries_v, mean(err_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
+plot(zeroentries_v, mean(err_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
+plot(zeroentries_v, mean(err_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
+plot(zeroentries_v, mean(err_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
+plot(zeroentries_v, mean(err_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
 ylabel('Norm of sparse code error')
-xlabel(['Rate of entries affected by noise (' num2str(SNRdB) ' dB)'])
+xlabel('Rate of missing entries')
 set(findall(gcf,'-property','FontSize'),'FontSize',FontSize)
 set(findall(gcf,'-property','Linewidth'),'Linewidth',Linewidth)
 set(findall(gcf,'-property','MarkerSize'),'MarkerSize',MarkerSize)
@@ -175,20 +173,20 @@ FontSize = 40;
 FontSizeLegend = 22;
 Linewidth = 5;
 MarkerSize = 20;
-plot(impulentries_v, 1000*mean(time_OMP,2), '--+' , 'Color', [0 0 153]/255)
+plot(zeroentries_v, 1000*mean(time_OMP,2), '--+' , 'Color', [0 0 153]/255)
 hold on
-plot(impulentries_v, 1000*mean(time_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
-plot(impulentries_v, 1000*mean(time_CMP,2), '--d' , 'Color', [0 0 0]/255)
-plot(impulentries_v, 1000*mean(time_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
-plot(impulentries_v, 1000*mean(time_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
-plot(impulentries_v, 1000*mean(time_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
-plot(impulentries_v, 1000*mean(time_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
-plot(impulentries_v, 1000*mean(time_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
+plot(zeroentries_v, 1000*mean(time_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
+plot(zeroentries_v, 1000*mean(time_CMP,2), '--d' , 'Color', [0 0 0]/255)
+plot(zeroentries_v, 1000*mean(time_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)
+plot(zeroentries_v, 1000*mean(time_FairOMP,2), '--v' , 'Color', [102 0 102]/255)
+plot(zeroentries_v, 1000*mean(time_HuberOMP,2), '-->' , 'Color', [255 0 0]/255)
+plot(zeroentries_v, 1000*mean(time_TukeyOMP,2), '--<' , 'Color', [255 128 0]/255)
+plot(zeroentries_v, 1000*mean(time_WelschOMP,2), '--o' , 'Color', [128 128 128]/255)
 ylabel('Processing time (ms.)')
-xlabel(['Rate of entries affected by noise (' num2str(SNRdB) ' dB)'])
+xlabel('Rate of missing entries')
 set(findall(gcf,'-property','FontSize'),'FontSize',FontSize)
 set(findall(gcf,'-property','Linewidth'),'Linewidth',Linewidth)
 set(findall(gcf,'-property','MarkerSize'),'MarkerSize',MarkerSize)
 legend({'OMP',['gOMP, N_0=' num2str(N0_v(idxgOMP))],'CMP','Cauchy','Fair','Huber','Tukey','Welsch'},...
     'Location','Northwest','FontSize',FontSizeLegend);
-ylim([0 19])
+ylim([0 17])
