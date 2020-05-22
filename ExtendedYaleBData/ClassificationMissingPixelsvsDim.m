@@ -96,9 +96,9 @@ for down_i = 1:ndown
         % Access training subset(s)
         for j = 1:length(TrainSubset)
             if subj_v(i) < 10
-                DirFiles = ['../../Data/CroppedYale/yaleB0' num2str(subj_v(i)) '/Subset' num2str(TrainSubset(j))];
+                DirFiles = ['../Data/CroppedYale/yaleB0' num2str(subj_v(i)) '/Subset' num2str(TrainSubset(j))];
             else
-                DirFiles = ['../../Data/CroppedYale/yaleB' num2str(subj_v(i)) '/Subset' num2str(TrainSubset(j))];
+                DirFiles = ['../Data/CroppedYale/yaleB' num2str(subj_v(i)) '/Subset' num2str(TrainSubset(j))];
             end
             FileList = dir(fullfile(DirFiles, '*.pgm'));
             nImg = size(FileList,1);
@@ -127,9 +127,9 @@ for down_i = 1:ndown
         % Access test subset(s)
         for j = 1:length(TestSubset)
             if subj_v(i) < 10
-                DirFiles = ['../../Data/CroppedYale/yaleB0' num2str(subj_v(i)) '/Subset' num2str(TestSubset(j))];
+                DirFiles = ['../Data/CroppedYale/yaleB0' num2str(subj_v(i)) '/Subset' num2str(TestSubset(j))];
             else
-                DirFiles = ['../../Data/CroppedYale/yaleB' num2str(subj_v(i)) '/Subset' num2str(TestSubset(j))];
+                DirFiles = ['../Data/CroppedYale/yaleB' num2str(subj_v(i)) '/Subset' num2str(TestSubset(j))];
             end
             FileList = dir(fullfile(DirFiles, '*.pgm'));
             nImg = size(FileList,1);
