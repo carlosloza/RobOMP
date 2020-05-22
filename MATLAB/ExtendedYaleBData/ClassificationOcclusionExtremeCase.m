@@ -2,7 +2,8 @@
 % Script that compares the classification performance of sparse coding
 % variants considered in "RobOMP: Robust variants of Orthogonal Matching 
 % Pursuit for sparse representations" DOI: 10.7717/peerj-cs.192 (open access)
-% Oclussion noise (black an pepper) scenario
+% Oclussion noise (black an pepper) scenario for feature dimension of 132
+% and fixed rate of pixels affected by blocks of salt and pepper noise
 % Author: Carlos Loza
 % https://github.carlosloza/RobOMP
 %
@@ -27,19 +28,14 @@
 % - 38 subjects in total, 64 images per subject
 % - Initial size of each image: 192 x 168
 % - Several number of repetitions (runs) are allowed
-% - This script replicates the results summarized in Fig 5 and Fig 6B of 
-% RobOMP article
+% - This script replicates the results summarized in Table 4 of RobOMP 
+% article
 % - The results in the article took a random seed so the final outputs
 % of this script might not exactly match the published results
 % - Lastly, this new version implements a warm start of RobOMP by default, 
 % i.e. the Huber solution is the initial solution for every RobOMP case
 % Empirically, this initialization was not only proved to be more stable,
 % but it also yielded better performance
-%
-% IMPORTANT: Inference for this type of classifier is very slow and
-% computationally demanding, e.g. it took roughly 2 days to run the 10
-% iterations per case needed (Intel Core i7 9700 CPU @ 3 GHz, 16 GB RAM)
-% One might argue that this compensates for the lack of training stage
 
 close all
 clearvars
@@ -47,12 +43,12 @@ clc
 
 addpath('..')               % Assuming directories as in remote repo
 
-K = 5;                      % Sparsity level
-downsamp = 0.25;            % Downsample factor
-bprate_v = 0:0.1:0.5;       % Set of occlusion (black and pepper) pixels rates
+K = 10;                     % Sparsity level
+downsamp = 1/16;            % Downsample factor
+bprate_v = 0.3;             % Set of occlusion (black and pepper) pixels rates
 TrainSubset = [1 2];        % Train subset(s) for class-dependent dictionaries
 TestSubset = 3;             % Test subset(s)
-N0_v = [2 3 5];             % Set of number of atoms extracted per iteration by gOMP
+N0_v = [2 3 5 10];          % Set of number of atoms extracted per iteration by gOMP
 subj_v = [1:13 15:39];
 nSub = length(subj_v);
 nbp = length(bprate_v);
@@ -339,54 +335,30 @@ for bp_i = 1:length(bprate_v)
     end 
 end
 
-%% Plot results - Fig. 5
+%% Plot results - Table 4
 figure('units','normalized','outerposition',[0 0 1 1])
 FontSize = 40;
-FontSizeLegend = 30;
+FontSizeLegend = 25;
 Linewidth = 5;
 MarkerSize = 20;
-plot(bprate_v, squeeze(mean(ClassOMP(end,:,:), 2)), '--+' , 'Color', [0 0 153]/255)
-hold on
-plot(bprate_v, squeeze(mean(ClassgOMP(end,:,:), 2)), '--x' , 'Color', [0 102 204]/255)
-plot(bprate_v, squeeze(mean(ClassCMP(end,:,:), 2)), '--d' , 'Color', [0 0 0]/255)
-plot(bprate_v, squeeze(mean(ClassCauchyOMP(end,:,:), 2)), '--^' , 'Color', [76 153 0]/255)
-plot(bprate_v, squeeze(mean(ClassFairOMP(end,:,:), 2)), '--v' , 'Color', [102 0 102]/255)
-plot(bprate_v, squeeze(mean(ClassHuberOMP(end,:,:), 2)), '-->' , 'Color', [255 0 0]/255)
-plot(bprate_v, squeeze(mean(ClassTukeyOMP(end,:,:), 2)), '--<' , 'Color', [255 128 0]/255)
-plot(bprate_v, squeeze(mean(ClassWelschOMP(end,:,:), 2)), '--o' , 'Color', [128 128 128]/255)
-xlabel('Oclussion rate')
-ylabel('Classification accuracy')
-set(findall(gcf,'-property','FontSize'),'FontSize',FontSize)
-set(findall(gcf,'-property','Linewidth'),'Linewidth',Linewidth)
-set(findall(gcf,'-property','MarkerSize'),'MarkerSize',MarkerSize)
-legend({'OMP','gOMP','CMP','Cauchy','Fair','Huber','Tukey','Welsch'},...
-    'Location','Southwest','FontSize',FontSizeLegend);
-ylim([0 1.1])
-yticks(0:0.25:1)
-
-%% Plot results - Fig 6B
-figure('units','normalized','outerposition',[0 0 1 1])
-FontSize = 40;
-FontSizeLegend = 23;
-Linewidth = 5;
-MarkerSize = 20;
-idx_p = find(bprate_v == 0.5);
 K_v = 1:K;
-plot(K_v, mean(ClassOMP(:,:,idx_p), 2), '--+' , 'Color', [0 0 153]/255)
+plot(K_v, mean(ClassOMP, 2), '--+' , 'Color', [0 0 153]/255)
 hold on
-plot(K_v, mean(ClassgOMP(:,:,idx_p), 2), '--x' , 'Color', [0 102 204]/255)
-plot(K_v, mean(ClassCMP(:,:,idx_p), 2), '--d' , 'Color', [0 0 0]/255)
-plot(K_v, mean(ClassCauchyOMP(:,:,idx_p), 2), '--^' , 'Color', [76 153 0]/255)
-plot(K_v, mean(ClassFairOMP(:,:,idx_p), 2), '--v' , 'Color', [102 0 102]/255)
-plot(K_v, mean(ClassHuberOMP(:,:,idx_p), 2), '-->' , 'Color', [255 0 0]/255)
-plot(K_v, mean(ClassTukeyOMP(:,:,idx_p), 2), '--<' , 'Color', [255 128 0]/255)
-plot(K_v, mean(ClassWelschOMP(:,:,idx_p), 2), '--o' , 'Color', [128 128 128]/255)
+plot(K_v, mean(ClassgOMP, 2), '--x' , 'Color', [0 102 204]/255)
+plot(K_v, mean(ClassCMP, 2), '--d' , 'Color', [0 0 0]/255)
+plot(K_v, mean(ClassCauchyOMP, 2), '--^' , 'Color', [76 153 0]/255)
+plot(K_v, mean(ClassFairOMP, 2), '--v' , 'Color', [102 0 102]/255)
+plot(K_v, mean(ClassHuberOMP, 2), '-->' , 'Color', [255 0 0]/255)
+plot(K_v, mean(ClassTukeyOMP, 2), '--<' , 'Color', [255 128 0]/255)
+plot(K_v, mean(ClassWelschOMP, 2), '--o' , 'Color', [128 128 128]/255)
 xlabel('Matching pursuit iteration (K)')
 ylabel('Classification accuracy')
 set(findall(gcf,'-property','FontSize'),'FontSize',FontSize)
 set(findall(gcf,'-property','Linewidth'),'Linewidth',Linewidth)
 set(findall(gcf,'-property','MarkerSize'),'MarkerSize',MarkerSize)
 legend({'OMP','gOMP','CMP','Cauchy','Fair','Huber','Tukey','Welsch'},...
-    'Location','Southwestoutside','FontSize',FontSizeLegend);
+    'Location','Northwest','FontSize',FontSizeLegend);
 ylim([0 1.1])
 yticks(0:0.25:1)
+xlim([-1 K])
+xticks(K_v)

@@ -1,4 +1,4 @@
-function [x, e, X, E] = gOMP(y, D, varargin)
+function [x, e, X, E, Xext, Eext] = gOMP(y, D, varargin)
 % Implementation of Generalized Orthogonal Matching Pursuit (gOMP) as
 % introduced by Wang, Kwon, and Shim 2011 (DOI: 10.1109/TSP.2012.2218810)
 % Author: Carlos Loza
@@ -11,37 +11,49 @@ function [x, e, X, E] = gOMP(y, D, varargin)
 %           Signal to be sparsely encoded
 % D :       matrix, size (m , n)
 %           Dictionary/measurement matrix made up of atoms
-% N0 :      Number of atoms chosen per iteration
+% N0 :      int, optional
+%           Number of atoms chosen per iteration
 %           Default: 1, i.e. regular orthogonal matching pursuit (OMP)
-% nnonzero :int
+% nnonzero :int, optional
 %           Number of non-zero coefficients in sparse code
 %           If nnonzero is not a multiple of N0, a warning flag is displayed
 %           and the actual number of non-zero coefficients in the sparse
 %           code is set to N0*floor(nnonzero/N0)
-%           nnonzero is equal to the number of iterations, i.e. OMP case,
+%           nnonzero is equal to the number of iterations (i.e. OMP case),
 %           only when N0 = 1.
-% tol :     float
+%           Default: n, i.e extreme non-sparse case
+% tol :     float, optional
 %           Residual norm tolerance. Dispersion/power rate not explained by
 %           the sparse code with respect to the norm of y
 %           Default: 0.1 i.e. 10% of the L2 norm of input y
 %
-% If neither K nor tol are set, then tol is set to default
-% If both K and tol are set, then the algorithm stops when both conditions
-% are met
+% If neither nnonzero nor tol are set, then tol is set to default
+% If both nnonzero and tol are set, then the algorithm stops when both 
+% conditions are met
 %
 % Returns
 % -------
 % x :       vector, size (n, 1)
-%           Sparse code corresponding to y encoded by D with sparsity level K
+%           Sparse code corresponding to y encoded by D with sparsity level
+%           nnonzero
 % e :       vector, size (m, 1)
-%           Residue/error after sparse coding of y with sparsity level K
-% X :       matrix, size (n, K)
+%           Residue/error after sparse coding of y with sparsity level
+%           nnonzero
+% X :       matrix, size (n, maxiter)
 %           Same as x, but each column corresponds to decreasingly sparser
-%           solutions, i.e. first column has sparsirty level of 1, second
-%           column has sparsity level of 2, and so on
-% E :       matrix, size (m, K)
+%           solutions according to maxiter
+% E :       matrix, size (m, maxiter)
 %           Same as e, but each column corresponds to residue after  
 %           decreasingly sparser solutions, i.e. likewise X
+% Xext :    matrix, size (n, nnonzero)
+%           same as x, but each column corresponds to decreasingly sparser
+%           solutions according to the number of gOMP iterations. nnonzero
+%           is the original sparsity set by the user. This matrix will have
+%           repeated inputs/columns if N0 ~= 0. It is mainly used for
+%           comparisons with classic OMP encoders where N0 = 1
+% Eext :    matrix, size (m, nnonzero)
+%           Same as e, but each column corresponds to residue after  
+%           decreasingly sparser solutions, i.e. likewise Xext
 %
 % Example: x = gOMP(y, D, 'N0', 2, 'nnonzero', 10, 'tol', 0.25)
 
@@ -77,14 +89,17 @@ switch flcase
         tol = 0.1;
 end
 
-% Check if nnonzero is multiple of N0
-if mod(nnonzero, N0) < 0
-    warning(['nnonzero is not a multiple of N0. Actual support of sparse code ', ...
-        'will be decreased'])
-    nnonzero = N0*floor(nnonzero/N0);
-elseif mod(nnonzero, N0) > 0
-    %warning('S is larger than nnonzero. S will be set to nnonzero')
+nnonzero_ini = nnonzero;
+% Check if N0 is larger than nnonzero and if nnonzero is multiple of N0
+if N0 > nnonzero
+    %     %warning('N0 is larger than nnonzero. N0 will be set to nnonzero')
     N0 = nnonzero;           % Extreme case, only one iteration is needed
+    nnonzero_ini = N0;
+end
+if mod(nnonzero, N0) ~= 0
+%     warning(['nnonzero is not a multiple of N0. Actual support of sparse code ', ...
+%         'will be decreased'])
+    nnonzero = N0*floor(nnonzero/N0);
 end
 
 maxiter = nnonzero/N0;
@@ -98,7 +113,7 @@ while (norm(r)/normy > tol && i < maxiter)
     i = i + 1;
     abscorr = abs(r'*D);
     [~, idx] = sort(abscorr, 'descend');
-    if any(diff(sort([idx_spcode idx(1:N0)])) == 0)  % Case for repeated atom
+    if any(diff(sort([idx_spcode idx(1:N0)])) == 0)  % Case for repeated atoms
         X(:,i:end) = repmat(X(:,i-1), 1, maxiter - i + 1);
         E(:,i:end) = repmat(E(:,i-1), 1, maxiter - i + 1);
         i = maxiter;
@@ -108,13 +123,28 @@ while (norm(r)/normy > tol && i < maxiter)
     idx_spcode = [idx_spcode idx(1:N0)];
     % Ordinary least-squares (OLS) regression
     b = D(:, idx_spcode)\y;
-    X(idx_spcode,i) = b;
-    r = y - D(:, idx_spcode)*X(idx_spcode ,i);    % Residue
+    X(idx_spcode, i) = b;
+    r = y - D(:, idx_spcode)*X(idx_spcode, i);    % Residue
     E(:,i) = r;
 end
 
-X = X(:,1:i);
-E = E(:,1:i);
+X = X(:, 1:i);
+E = E(:, 1:i);
 x = X(:, end);
 e = E(:, end);
+
+% Extended versions for comparisons with classic OMP encoders
+Xext = zeros(n, nnonzero);
+Eext = zeros(m, nnonzero);
+ct = 1;
+for i = 1:N0:nnonzero
+    Xext(:, i:i + N0 - 1) = repmat(X(:, ct), 1, N0);
+    Eext(:, i:i + N0 - 1) = repmat(E(:, ct), 1, N0);
+    ct = ct + 1;
+end
+if nnonzero_ini > nnonzero
+    Xext = [Xext repmat(X(:, end), 1, nnonzero_ini - nnonzero)];
+    Eext = [Eext repmat(E(:, end), 1, nnonzero_ini - nnonzero)];
+end
+
 end

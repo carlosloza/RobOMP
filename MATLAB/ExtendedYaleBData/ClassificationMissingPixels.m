@@ -51,7 +51,7 @@ addpath('..')               % Assuming directories as in remote repo
 
 K = 5;                      % Sparsity level
 downsamp = 0.25;            % Downsample factor
-misspixrate_v = 0:0.1:1;    % Missing pixels rate
+misspixrate_v = 0:0.1:1;    % Set of missing pixels rates
 TrainSubset = [1 2];        % Train subset(s) for class-dependent dictionaries
 TestSubset = 3;             % Test subset(s)
 N0_v = [2 3 5];             % Set of number of atoms extracted per iteration by gOMP
@@ -144,7 +144,6 @@ ClassTukeyOMP = zeros(K, nRep, nmisspix);
 ClassWelschOMP = zeros(K, nRep, nmisspix);
 for misspix_i = 1:length(misspixrate_v)
     misspix = misspixrate_v(misspix_i);   
-    BSize = round(sqrt(((192*168)*downsamp^2).*(misspix))); 
     for rep = 1:nRep
         clc
         fprintf('Missing pixels rate = %.2f, Repetition: %d \n', misspix, rep)
@@ -200,7 +199,7 @@ for misspix_i = 1:length(misspixrate_v)
                     D = Dictionary(sub_j).D;
                     auxnorm = zeros(K, length(N0_v));
                     for j = 1:length(N0_v)
-                        [~, ~, ~, E] = gOMP(YNoise(:,i), D, 'N0', N0_v(j), 'nnonzero', K);
+                        [~, ~, ~, ~, ~, E] = gOMP(YNoise(:,i), D, 'N0', N0_v(j), 'nnonzero', K);
                         auxnorm(:, j) = sqrt(sum(E.^2, 1));
                     end
                     normM(i, sub_j, :) = min(auxnorm, [], 2);

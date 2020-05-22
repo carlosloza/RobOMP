@@ -52,6 +52,5 @@ for i = 1:nSub
         end
         imwrite(auxImg, [DirFiles subs FileList(j).name]);
     end
-    sd = 1;
 end
 fprintf('Done! \n')

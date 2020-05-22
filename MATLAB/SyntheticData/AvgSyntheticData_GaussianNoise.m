@@ -152,7 +152,7 @@ MarkerSize = 20;
 plot(sigma_v, mean(err_OMP,2), '--+' , 'Color', [0 0 153]/255)
 hold on
 % Best case for gOMP
-idxgOMP = 3;
+idxgOMP = 2;
 plot(sigma_v, mean(err_gOMP(:,:,idxgOMP),2), '--x' , 'Color', [0 102 204]/255)
 plot(sigma_v, mean(err_CMP,2), '--d' , 'Color', [0 0 0]/255)
 plot(sigma_v, mean(err_CauchyOMP,2), '--^' , 'Color', [76 153 0]/255)

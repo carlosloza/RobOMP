@@ -86,7 +86,7 @@ while (norm(r)/normy > tol && i < nnonzero)
         X(:,i:end) = repmat(X(:,i-1), 1, nnonzero - i + 1);
         E(:,i:end) = repmat(E(:,i-1), 1, nnonzero - i + 1);
         i = nnonzero;
-        warning('Repeated atom detected. Algorithm stops.')
+        %warning('Repeated atom detected. Algorithm stops.')
         break
     end
     idx_spcode = [idx_spcode idx];
@@ -113,7 +113,7 @@ function [b, w] = CorrentropyReg(y, X)
 % Parameters
 % ----------
 % y :   vector, size (m, 1)
-%       Samples from dependent/response/measured variable, in a linear 
+%       Samples from dependent/response/measured variable in a linear 
 %       regression framework
 % X :   matrix, size (m, K)
 %       Samples from K different regressors, input/independent variables in

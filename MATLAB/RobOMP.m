@@ -19,10 +19,10 @@ function [x, e, w, X, E] = RobOMP(y, D, varargin)
 %               M-estimator for linear regression subroutine of Orthogonal
 %               Matching Pursuit. Cases: Cauchy, Fair, Huber, Tukey, Welsch
 %               Default: Huber
-% c :           float
+% m_est_hyperp: float
 %               Hyperparameter of M-estimators
 %               Defaults are set on a per-estimator basis according to 95% 
-%               asymptotic efficiency on the standar Normal distribution, 
+%               asymptotic efficiency on the standard Normal distribution, 
 %               see Table 2 of Loza 2019 for specifics
 % nnonzero :    int
 %               Number of non-zero coefficients in sparse code
@@ -205,13 +205,13 @@ th = 1e-2;                      % Stopping criterion threshold for IRLS
 inv_const = 0.00001;            % To avoid matrix-inversion-related errors
 [d, n] = size(X);
 
-% If no initial solution is provided, use ols
+% If no initial solution is provided, use OLS
 if nargin == 4
     X2 = X'*X;                      % Compute to accelerate computations
     b = (X2 + inv_const*eye(n))\(X'*y);
 end
 e = y - X*b;
-% Estimate scale
+% Estimate scale and weight vector
 s = 1.4824*median(abs(e - median(e)));
 w = fm_est(e, s, m_est_hyperp);
 % Fast calculation of matrix multiplications
@@ -262,8 +262,8 @@ end
 function w = Huber(e, s, m_est_hyperp)
 res = e/s;
 w = ones(length(e),1);
-idx1 = abs(res) >= m_est_hyperp;
-w(idx1) = m_est_hyperp./abs(res(idx1));
+idx = abs(res) >= m_est_hyperp;
+w(idx) = m_est_hyperp./abs(res(idx));
 end
 
 %% Tukey m-estimator weighting
