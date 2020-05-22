@@ -24,9 +24,9 @@ nSub = length(subj_v);
 fprintf('Creating subsets... \n')
 for i = 1:nSub
     if subj_v(i) < 10
-        DirFiles = ['../../Data/CroppedYale/yaleB0' num2str(subj_v(i))];
+        DirFiles = ['../Data/CroppedYale/yaleB0' num2str(subj_v(i))];
     else
-        DirFiles = ['../../Data/CroppedYale/yaleB' num2str(subj_v(i))];
+        DirFiles = ['../Data/CroppedYale/yaleB' num2str(subj_v(i))];
     end
     % Create directories for each subset
     for j = 1:5
@@ -35,22 +35,26 @@ for i = 1:nSub
     FileList = dir(fullfile(DirFiles, '*.pgm'));
     nImg = size(FileList,1);
     for j = 1:nImg
-        auxImg = imread([DirFiles '/' FileList(j).name]);
-        a1 = str2double(FileList(j).name(end-10:end-8));
-        a2 = str2double(FileList(j).name(end-5:end-4));
-        angl = round(sqrt(a1^2 + a2^2));
-        if angl <= 12
-            subs = '/Subset1/';
-        elseif angl >= 13 && angl <= 25
-            subs = '/Subset2/';
-        elseif angl >= 26 && angl <= 54
-            subs = '/Subset3/';
-        elseif angl >= 55 && angl < 83
-            subs = '/Subset4/';
-        elseif angl >= 84
-            subs = '/Subset5/';
+        if strcmp(FileList(j).name(end-10:end-4), 'Ambient')
+            fprintf('Ignore file \n')
+        else
+            auxImg = imread([DirFiles '/' FileList(j).name]);
+            a1 = str2double(FileList(j).name(end-10:end-8));
+            a2 = str2double(FileList(j).name(end-5:end-4));
+            angl = round(sqrt(a1^2 + a2^2));
+            if angl <= 12
+                subs = '/Subset1/';
+            elseif angl >= 13 && angl <= 25
+                subs = '/Subset2/';
+            elseif angl >= 26 && angl <= 54
+                subs = '/Subset3/';
+            elseif angl >= 55 && angl < 83
+                subs = '/Subset4/';
+            elseif angl >= 84
+                subs = '/Subset5/';
+            end
+            imwrite(auxImg, [DirFiles subs FileList(j).name]);
         end
-        imwrite(auxImg, [DirFiles subs FileList(j).name]);
     end
 end
 fprintf('Done! \n')
