@@ -1,3 +1,4 @@
-*asv
 Data/CroppedYale
-MATLAB/ExtendedYaleBData/Figures
+ExtendedYaleBData/Figures
+venv
+.idea
