@@ -1,5 +1,5 @@
-Data/CroppedYale
-ExtendedYaleBData/Figures
-SyntheticData/.ipynb_checkpoints
-venv
-.idea
+/Data/CroppedYale/
+/ExtendedYaleBData/Figures/
+venv/
+.idea/
+/SyntheticData/.ipynb_checkpoints/
